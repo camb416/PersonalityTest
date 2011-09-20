@@ -18,6 +18,23 @@ extern "C" void __cxa_pure_virtual()
 
 __extension__ typedef int __guard __attribute__((mode (__DI__)));
 
+const int PINS = 6;
+const unsigned long TIMEOUT_INPUT = 10000;
+const unsigned long TIMEOUT_SCORE = 10000;
+
+const int analogPins[] = {A0,A1,A2,A3,A4,A5};
+
+int rawScoreValues[PINS];
+int scoreValues[PINS];
+int rawSum;
+int score;
+bool isInput;
+bool isScored;
+unsigned long inputMillis;
+unsigned long scoreMillis;
+int buttonPin = 8;
+int ledPin = 9;
+
 void * operator new(size_t size)
 {
   return malloc(size);
@@ -59,135 +76,124 @@ int main(void) {
 }
 
 void setup() {
+	Serial.begin(9600);
+	pinMode(buttonPin, INPUT);
+	pinMode(ledPin, OUTPUT);
 	bdd.startup();
+	for (int i = 0; i < PINS; i++)
+	{
+		rawScoreValues[i] = 0;
+		scoreValues[i] = 0;
+	}
+	rawSum = 0;
+	Serial.println("STARTUP...");
+	score = 35;
+	bdd.digitArray[0] = 0;
+	bdd.digitArray[1] = 1;
+	bdd.digitArray[2] = 2;
+	bdd.digitArray[3] = 3;
+	bdd.digitArray[4] = 4;
+	bdd.digitArray[5] = 5;
+	bdd.digitArray[6] = 0;
+	bdd.digitArray[7] = 0;
+	bdd.digitArray[8] = 8;
+	bdd.updateDisplays();
+//	bdd.updateDisplays();
 }
 
 void loop() {
-
-	for (int i = 0; i < 20; i++)//(int)sizeof(hello); i++)
-	{
-		//bdd.setAll(i);
-		for (int j = 0; j < 8; j++)
-		{
-			bdd.digitArray[8-j] = hello[(i + j + 20) % 20];
-		}
-		bdd.updateDisplays();
-		delay(500);
-	}
-
-
-//	bdd.updateSlider();
-//	bdd.updateButtons();
-//
-//	switch (bdd.state) {
-//	case -1:
-//		// startup animation
-//		bdd.startup();
-//		bdd.state = 0;
-//		break;
-//	case 0:
-//		// sleep state
-//		if (bdd.kgVal == LOW) {
-//			bdd.state = 2;
-//		}
-//		if (bdd.lbVal == LOW) {
-//			bdd.state = 3;
-//		}
-//
-//		bdd.updateDisplays();
-//
-//		if (bdd.checkSlider()) {
-//			Serial.println("TRUE");
-//			bdd.state = 1;
-//		} else {
-//			Serial.println("FALSE");
-//			bdd.setAll(10);
-//			delay(50);
-//		}
-//
-//		break;
-//	case 1:
-//		// measuring...
-//		bdd.updateSlider();
-//		bdd.checkSlider();
-//		bdd.measure();
-//		bdd.updateDisplays();
-//		if ((millis() - bdd.startWait) > bdd.TIMEOUT) {
-//			bdd.state = 0;
-//		}
-//		// display live measurement value
-//
-//		if (bdd.kgVal == LOW) {
-//			bdd.state = 2;
-//		}
-//		if (bdd.lbVal == LOW) {
-//			bdd.state = 3;
-//		}
-//
-//		break;
-//	case 2:
-//		bdd.updateSlider();
-//		bdd.checkSlider();
-//		bdd.measure();
-//		bdd.updateButtons();
-//		bdd.updateDisplays();
-//
-//		Serial.println("measuring");
-//		//  setMass(calculateMass());
-//		bdd.setMass(bdd.calculateMass(false));
-//		Serial.print("THIS IS MASS------>>>>>>");
-//		Serial.println(bdd.calculateMass(false), DEC);
-//		Serial.println("CALCULATING MASS");
-//
-//		bdd.updateDisplays();
-//		/*
-//		 Serial.println();
-//		 Serial.println("*************************************************************************************");
-//		 Serial.println("*********************              UPDATING DISPLAY              ********************");
-//		 Serial.println("*************************************************************************************");
-//		 Serial.println();
-//		 */
-//		delay(5000);
-//		bdd.clearMass();
-//		bdd.state = 1;
-//		break;
-//	case 3:
-//		bdd.updateSlider();
-//		bdd.checkSlider();
-//		bdd.updateButtons();
-//		bdd.measure();
-//		bdd.updateDisplays();
-//
-//		bdd.setMass(bdd.calculateMass(true));
-//		Serial.print("THIS IS MASS------>>>>>>");
-//		Serial.println(bdd.calculateMass(true), DEC);
-//		Serial.println("CALCULATING MASS");
-//
-//		//updateDisplays();
-//		bdd.updateDisplays();
-//		delay(5000);
-//		bdd.clearMass();
-//		bdd.state = 1;
-//		break;
-//	}
+	//Serial.println("heartbeat...");
 
 	/*
-	 clearLength();
-	 clearMass();
-
-
-	 if(digitalRead(kgPin)==LOW){
-	 setLength(123);
-	 }
-	 if(digitalRead(lbPin)==LOW){
-	 setMass(analogRead(A0));
-	 }
-
+	 * 50-day reset
 	 */
-	// setLength(123);
-	// setMass(45678);
-	// updateDisplays();
+	if (scoreMillis > millis())
+	{
+		scoreMillis = millis();
+	}
+	if (inputMillis > millis())
+	{
+		inputMillis = millis();
+	}
 
+	/*
+	 * check for changes in input or button
+	 */
+	rawSum = 0;
+	score=0;
+	for (int i = 0; i < PINS; i++)
+	{
+		rawScoreValues[i] = 1023-analogRead(analogPins[i]);
+		int temp = constrain((rawScoreValues[i] + 128)/255,0,1023);
+		if (scoreValues[i] != temp)
+		{
+			Serial.print("RAW: ");
+			Serial.print(rawScoreValues[i]);
+			Serial.print(" -> INPUT ON PIN ");
+			Serial.print(i);
+			Serial.print(" ");
+			Serial.print(temp);
+			Serial.print(" vs ");
+			Serial.println(scoreValues[i]);
+			inputMillis = millis();
+			isInput = true;
+			isScored = false;
+		}
+		scoreValues[i] = temp;
+		score += scoreValues[i];
+	}
+	score += PINS;
+
+	if (digitalRead(buttonPin) == HIGH)
+	{
+		isScored = true;
+		scoreMillis = millis();
+	}
+
+	/*
+	 * display outputs
+	 */
+	if (isScored)
+	{
+		if (score/10 >= 1)
+			bdd.digitArray[6] = score/10;
+		else
+			bdd.digitArray[6] = 10;
+		bdd.digitArray[7] = score%10;
+		bdd.updateDisplays();
+		digitalWrite(ledPin,LOW);
+	}
+	else
+	{
+		if (isInput)
+		{
+			bdd.digitArray[6] = 10;
+			bdd.digitArray[7] = 10;
+			bdd.updateDisplays();
+			//TODO: added blinking
+			digitalWrite(ledPin,HIGH);
+		}
+		else
+		{
+			bdd.digitArray[6] = 10;
+			bdd.digitArray[7] = 10;
+			bdd.updateDisplays();
+			digitalWrite(ledPin,LOW);
+		}
+	}
+
+	/*
+	 * reset timeouts
+	 */
+	if (millis() - scoreMillis > TIMEOUT_SCORE)
+	{
+		isScored = false;
+	}
+
+	if (millis() - inputMillis > TIMEOUT_INPUT)
+	{
+		isInput = false;
+	}
 
 }
 
