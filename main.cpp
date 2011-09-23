@@ -167,8 +167,8 @@ void loop() {
 	{
 		if (isInput)
 		{
-			bdd.digitArray[6] = 10;
-			bdd.digitArray[7] = 10;
+			bdd.digitArray[6] = DISP_DASH;
+			bdd.digitArray[7] = DISP_DASH;
 			bdd.updateDisplays();
 			//TODO: added blinking
 			digitalWrite(ledPin,HIGH);
