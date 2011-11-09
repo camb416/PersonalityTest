@@ -19,10 +19,11 @@ extern "C" void __cxa_pure_virtual()
 __extension__ typedef int __guard __attribute__((mode (__DI__)));
 
 const int PINS = 6;
-const unsigned long TIMEOUT_INPUT = 10000;
-const unsigned long TIMEOUT_SCORE = 10000;
+const static unsigned long TIMEOUT_INPUT = 5000;
+const static unsigned long TIMEOUT_SCORE = 5000;
+const static unsigned long TIMEOUT_BLINK = 200;
 
-const int analogPins[] = {A0,A1,A2,A3,A4,A5};
+const static int analogPins[] = {A0,A1,A2,A3,A4,A5};
 
 int rawScoreValues[PINS];
 int scoreValues[PINS];
@@ -32,8 +33,8 @@ bool isInput;
 bool isScored;
 unsigned long inputMillis;
 unsigned long scoreMillis;
-int buttonPin = 8;
-int ledPin = 9;
+static int buttonPin = 8;
+static int ledPin = 9;
 
 void * operator new(size_t size)
 {
@@ -76,7 +77,7 @@ int main(void) {
 }
 
 void setup() {
-	Serial.begin(9600);
+//	Serial.begin(9600);
 	pinMode(buttonPin, INPUT);
 	pinMode(ledPin, OUTPUT);
 	bdd.startup();
@@ -86,7 +87,7 @@ void setup() {
 		scoreValues[i] = 0;
 	}
 	rawSum = 0;
-	Serial.println("STARTUP...");
+//	Serial.println("STARTUP...");
 	score = 35;
 	bdd.digitArray[0] = 0;
 	bdd.digitArray[1] = 1;
@@ -94,8 +95,8 @@ void setup() {
 	bdd.digitArray[3] = 3;
 	bdd.digitArray[4] = 4;
 	bdd.digitArray[5] = 5;
-	bdd.digitArray[6] = 0;
 	bdd.digitArray[7] = 0;
+	bdd.digitArray[8] = 0;
 	bdd.digitArray[8] = 8;
 	bdd.updateDisplays();
 //	bdd.updateDisplays();
@@ -127,14 +128,14 @@ void loop() {
 		int temp = constrain((rawScoreValues[i] + 128)/255,0,1023);
 		if (scoreValues[i] != temp)
 		{
-			Serial.print("RAW: ");
-			Serial.print(rawScoreValues[i]);
-			Serial.print(" -> INPUT ON PIN ");
-			Serial.print(i);
-			Serial.print(" ");
-			Serial.print(temp);
-			Serial.print(" vs ");
-			Serial.println(scoreValues[i]);
+//			Serial.print("RAW: ");
+//			Serial.print(rawScoreValues[i]);
+//			Serial.print(" -> INPUT ON PIN ");
+//			Serial.print(i);
+//			Serial.print(" ");
+//			Serial.print(temp);
+//			Serial.print(" vs ");
+//			Serial.println(scoreValues[i]);
 			inputMillis = millis();
 			isInput = true;
 			isScored = false;
@@ -155,29 +156,59 @@ void loop() {
 	 */
 	if (isScored)
 	{
-		if (score/10 >= 1)
-			bdd.digitArray[6] = score/10;
+		if (millis()%2 == 0)
+		{
+			bdd.digitArray[7] = DISP_BLANK;
+			bdd.digitArray[8] = DISP_BLANK;
+		}
+		else if ((millis()/250)%2 == 0)
+		{
+			bdd.digitArray[7] = DISP_BLANK;
+			bdd.digitArray[8] = DISP_BLANK;
+		}
 		else
-			bdd.digitArray[6] = 10;
-		bdd.digitArray[7] = score%10;
+		{
+			if (score/10 >= 1)
+				bdd.digitArray[7] = score/10;
+			else
+				bdd.digitArray[7] = 10;
+			bdd.digitArray[8] = score%10;
+		}
 		bdd.updateDisplays();
 		digitalWrite(ledPin,LOW);
 	}
 	else
 	{
+		bdd.digitArray[7] = DISP_BLANK;
+		bdd.digitArray[8] = DISP_BLANK;
+		bdd.updateDisplays();
 		if (isInput)
 		{
-			bdd.digitArray[6] = DISP_DASH;
-			bdd.digitArray[7] = DISP_DASH;
-			bdd.updateDisplays();
-			//TODO: added blinking
+//			if ((millis()/250)%4 == 0)
+//			{
+//				bdd.digitArray[7] = DISP_DASH;
+//				bdd.digitArray[8] = DISP_DASH;
+//			}
+//			else if ((millis()/250)%4 == 1)
+//			{
+//				bdd.digitArray[7] = 18;
+//				bdd.digitArray[8] = 19;
+//			}
+//			else if ((millis()/250)%4 == 2)
+//			{
+//				bdd.digitArray[7] = DISP_DASH;
+//				bdd.digitArray[8] = DISP_DASH;
+//			}
+//			else
+//			{
+//				bdd.digitArray[7] = 19;
+//				bdd.digitArray[8] = 18;
+//			}
+//			bdd.updateDisplays();
 			digitalWrite(ledPin,HIGH);
 		}
 		else
 		{
-			bdd.digitArray[6] = 10;
-			bdd.digitArray[7] = 10;
-			bdd.updateDisplays();
 			digitalWrite(ledPin,LOW);
 		}
 	}
