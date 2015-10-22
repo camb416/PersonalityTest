@@ -4,7 +4,7 @@ PersonalityTest
 PersonalityTest
 
 uses: libBigDigitDriver
-https://github.com/camb416/libBigDigitDriver
+https://github.com/camb416/BigDigitDriver
 
 This includes the microcontroller software for running a counting interactive using analog rotary switches.
 
